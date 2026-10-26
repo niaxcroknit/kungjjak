@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>여행 합의서</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gothic+A1:wght@400;600;800&display=swap">
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <div class="wrap" id="app"></div>
+  <div class="sheet" id="sheet" hidden>
+    <div class="box" role="dialog" aria-labelledby="sheet-title">
+      <div class="head"><h2 id="sheet-title"></h2><button class="ghost" id="sheet-close" type="button">닫기</button></div>
+      <div id="sheet-body" class="panel"></div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

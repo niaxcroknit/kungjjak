@@ -1,0 +1,32 @@
+# Supabase 무료 플랜 자동 일시정지 방지
+# 하루 3번(한국시간 오전 9시 · 오후 3시 · 오후 9시쯤) DB에 가벼운 요청을 보내요.
+# 주소와 공개 키는 앱에 들어가는 공개용 값이라 여기 그대로 적어둠. 다른 프로젝트로 바꾸면 저장소 Secrets(SUPABASE_URL, SUPABASE_KEY)가 우선해요.
+name: Supabase keepalive
+
+on:
+  schedule:
+    - cron: '7 0,6,12 * * *'   # UTC 기준 (한국시간 = UTC+9). 정각은 GitHub이 붐벼서 7분으로
+  workflow_dispatch: {}          # Actions 탭에서 'Run workflow'로 바로 실행해 보기
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ofddzgicbvogshfzfmbo.supabase.co' }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY || 'sb_publishable_QM_sKn_I7B3vB15eHRriQg_p6RAfKab' }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "::error::저장소 Secrets에 SUPABASE_URL, SUPABASE_KEY를 넣어주세요"; exit 1
+          fi
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/out -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/keepalive" \
+              -H "apikey: $SUPABASE_KEY" -H "Content-Type: application/json" -d '{}')
+            echo "try $i → HTTP $code $(cat /tmp/out)"
+            if [ "$code" = "200" ]; then exit 0; fi
+            if [ "$code" = "540" ]; then echo "::error::프로젝트가 이미 일시정지됐어요. Supabase 대시보드에서 Resume project를 눌러주세요"; exit 1; fi
+            sleep 20
+          done
+          echo "::error::Supabase 응답이 없어요"; exit 1
