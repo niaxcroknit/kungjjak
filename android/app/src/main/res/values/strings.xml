@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">여행 합의서</string>
-    <string name="title_activity_main">여행 합의서</string>
+    <string name="app_name">쿵짝트립</string>
+    <string name="title_activity_main">쿵짝트립</string>
     <string name="package_name">com.tripagree.app</string>
     <string name="custom_url_scheme">com.tripagree.app</string>
 </resources>

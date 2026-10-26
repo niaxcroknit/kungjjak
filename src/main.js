@@ -72,7 +72,7 @@ function renderLogin(msg) {
     btn.disabled = false;
   });
   $('#app').replaceChildren(el('div', { class: 'screen login' },
-    el('div', { class: 'eyebrow', text: '여행 합의서' }),
+    el('div', { class: 'eyebrow', text: '쿵짝트립' }),
     el('h1', { text: '떠나기 전에\n맞춰보자' }),
     el('p', { text: '친구들과 여행 취향을 체크하고, 누가 뭘 골랐는지 한 장으로 비교해요. 바뀐 답은 기록으로 남아요.' }),
     store.get('pendingJoin') ? el('div', { class: 'notice', text: `초대받은 여행(${store.get('pendingJoin')})이 있어요. 로그인하면 바로 들어가요.` }) : null,
@@ -238,12 +238,12 @@ function renderHeaderOnly() {}
 function renderBody() { if (tab === 'mine') renderMine(); else renderAll(); }
 
 async function shareTrip() {
-  const text = `[여행 합의서] '${trip.name}' 같이 체크하자!\n초대 코드: ${trip.code}`
+  const text = `[쿵짝트립] '${trip.name}' 같이 체크하자!\n초대 코드: ${trip.code}`
     + (STORE_URL ? `\n\n갤럭시(안드로이드): 앱 받고 '코드로 참여'\n${STORE_URL}` : '')
     + (WEB_URL ? `\n\n아이폰·PC: 아래 링크 누르면 바로 참여\n${WEB_URL}/?join=${trip.code}` : '');
   const copy = async () => { try { await navigator.clipboard.writeText(text); toast('초대 문구를 복사했어요. 카톡에 붙여넣으세요'); } catch { toast(`초대 코드: ${trip.code}`); } };
   try {
-    if (Capacitor.isNativePlatform()) await Share.share({ title: '여행 합의서 초대', text, dialogTitle: '친구 초대' });
+    if (Capacitor.isNativePlatform()) await Share.share({ title: '쿵짝트립 초대', text, dialogTitle: '친구 초대' });
     else if (navigator.share) await navigator.share({ text });
     else await copy();
   } catch (e) { if (e?.name !== 'AbortError') await copy(); }   // 공유 창이 안 되는 환경이면 복사로

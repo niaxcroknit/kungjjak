@@ -1,4 +1,4 @@
--- 여행 합의서 — Supabase 스키마 + 권한(RLS)
+-- 쿵짝트립 — Supabase 스키마 + 권한(RLS)
 --
 -- trips          여행 1개 (방장, 초대 코드, 마감 여부)
 -- trip_members   누가 어느 여행에 들어와 있는지
