@@ -353,7 +353,7 @@ function pick(q, lab) {
   queueSave();
   // 하나만 고르는 질문은 고르면 바로 다음 장으로 (장소·기타 입력이 필요한 경우 빼고)
   const needsInput = (lab === q.fixed || lab === ETC) && sel.includes(lab);
-  if (!q.multi && sel.length && !needsInput) { renderMine(); setTimeout(() => { if (Q[step] === q) goStep(step + 1); }, 180); }
+  if (!q.multi && sel.length && !needsInput) { renderMine(); setTimeout(() => { if (Q[step]?.id === q.id) goStep(step + 1); }, 180); /* 실시간 새로고침으로 Q가 새 객체가 돼도 id로 비교 */ }
   else renderMine();
 }
 /* ----- 달력 (가능한 날짜) ----- */

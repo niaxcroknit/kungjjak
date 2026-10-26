@@ -1,5 +1,7 @@
 # 여행 합의서 (안드로이드 + Supabase)
 
+> **출시 순서는 [`docs/RELEASE.md`](docs/RELEASE.md)**, 스토어 문구는 [`docs/STORE.md`](docs/STORE.md), 스토어 이미지는 `resources/store/`에 있어요.
+
 친구들과 여행 취향을 체크하고 한 장 표로 비교하는 앱이에요.
 화면은 웹(HTML/JS)이고 **Capacitor**로 안드로이드 앱으로 감쌌어요. 데이터는 **Supabase** 프로젝트 `trip-agree`(서울)에 저장돼요.
 
