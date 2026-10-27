@@ -62,21 +62,44 @@ App.addListener('backButton', () => {
 
 /* ================= login ================= */
 const G_ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.2C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z"/><path fill="#FBBC05" d="M10.6 28.5A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.8-4.5l-7.9-6.2A24 24 0 0 0 0 24c0 3.9.9 7.5 2.7 10.7l7.9-6.2z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.2C6.6 42.6 14.6 48 24 48z"/></svg>';
+// 앱 아이콘과 같은 티켓 마크
+const LOGO = '<svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#0E7C66"/><g transform="rotate(-9 32 32)"><path fill="#fff" d="M14 22a4 4 0 0 1 4-4h28a4 4 0 0 1 4 4v6.5a3.5 3.5 0 0 0 0 7V42a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4v-6.5a3.5 3.5 0 0 0 0-7z"/><path d="M21 32.5l4.5 4.5 9-10" fill="none" stroke="#0E7C66" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="42" cy="28" r="1.8" fill="#E8542F"/><path d="M39 23v18" stroke="#0E7C66" stroke-opacity=".35" stroke-width="1" stroke-dasharray=".5 2.5" stroke-linecap="round"/></g></svg>';
+const PRIVACY_URL = 'https://valuable-aftermath-515.notion.site/4064235ad3ee8064b51dce27f803e605';
+
+// 로그인 화면 아래 미리보기: 친구 둘의 답이 갈린 모습
+function loginPreview() {
+  const row = (who, color, ans, hot) => el('div', { class: 'pv-row' },
+    el('span', { class: 'av', text: who.slice(0, 1), style: `background:${color}` }),
+    el('span', { class: 'pv-name', text: who }),
+    el('span', { class: 'pv-ans' + (hot ? ' hot' : ''), text: ans }));
+  return el('div', { class: 'pv', 'aria-hidden': 'true' },
+    el('div', { class: 'pv-ticket' },
+      el('div', { class: 'pv-head' }, el('span', { class: 'pv-cat', text: '숙소' }), el('span', { class: 'pv-flag', text: '얘기할 것' })),
+      el('div', { class: 'pv-q', text: '어디서 잘까?' }),
+      row('민지', '#E8542F', '호텔', true), row('지훈', '#3D7FC8', '에어비앤비', true), row('나', '#0E7C66', '호텔')),
+    el('div', { class: 'pv-stamp', text: '쿵짝!' }));
+}
+
 function renderLogin(msg) {
-  const btn = el('button', { class: 'gbtn', type: 'button' });
-  btn.innerHTML = G_ICON + '<span>Google로 시작하기</span>';
-  const err = el('div', { class: 'err' }); if (msg) err.textContent = msg;
+  const btn = el('button', { class: 'gsi', type: 'button' });
+  btn.innerHTML = '<span class="gsi-icon">' + G_ICON + '</span><span class="gsi-text">Google 계정으로 계속하기</span>';
+  const err = el('div', { class: 'err', role: 'alert' }); if (msg) err.textContent = msg;
   btn.addEventListener('click', async () => {
     btn.disabled = true; err.textContent = '';
     try { await signIn(); } catch (e) { console.error(e); err.textContent = '로그인하지 못했어요. 다시 눌러주세요.'; }
     btn.disabled = false;
   });
+  const brand = el('div', { class: 'brand' }); brand.innerHTML = LOGO + '<span>쿵짝트립</span>';
   $('#app').replaceChildren(el('div', { class: 'screen login' },
-    el('div', { class: 'eyebrow', text: '쿵짝트립' }),
-    el('h1', { text: '떠나기 전에\n맞춰보자' }),
-    el('p', { text: '친구들과 여행 취향을 체크하고, 누가 뭘 골랐는지 한 장으로 비교해요. 바뀐 답은 기록으로 남아요.' }),
-    store.get('pendingJoin') ? el('div', { class: 'notice', text: `초대받은 여행(${store.get('pendingJoin')})이 있어요. 로그인하면 바로 들어가요.` }) : null,
-    btn, err));
+    el('div', { class: 'login-top' },
+      brand,
+      el('h1', { text: '떠나기 전에\n쿵짝 맞춰보자' }),
+      el('p', { class: 'lead', text: '여행 취향을 각자 체크하면, 갈린 것만 골라서 보여줘요. 바뀐 답은 기록으로 남아요.' })),
+    loginPreview(),
+    el('div', { class: 'login-bottom' },
+      store.get('pendingJoin') ? el('div', { class: 'notice', text: `초대받은 여행(${store.get('pendingJoin')})이 있어요. 로그인하면 바로 들어가요.` }) : null,
+      btn, err,
+      el('p', { class: 'fine' }, '계속하면 ', el('a', { href: PRIVACY_URL, target: '_blank', rel: 'noopener' }, '개인정보처리방침'), '에 동의하게 돼요.'))));
 }
 
 /* ================= home ================= */
@@ -96,21 +119,33 @@ function watchMyTrips() {
   loadMyTrips();
 }
 function renderHome() {
-  const list = el('div', { class: 'panel' });
-  if (!myTrips.length) list.append(el('div', { class: 'card empty', text: '아직 여행이 없어요.' }));
-  myTrips.forEach(t => list.append(el('button', { class: 'card triprow', type: 'button', onclick: () => openTrip(t.id) },
-    el('b', { text: t.name }),
-    el('span', { class: 'small', text: [`${t.count}명`, t.note, t.locked ? '마감' : ''].filter(Boolean).join(' · ') }),
-    el('span', { class: 'go', text: '›' }))));
-  $('#app').replaceChildren(el('div', { class: 'screen' },
+  const list = el('div', { class: 'tickets' });
+  if (!myTrips.length) list.append(el('div', { class: 'ticket ghost-ticket' },
+    el('div', { class: 'tk-main' },
+      el('b', { class: 'tk-name', text: '아직 여행이 없어요' }),
+      el('span', { class: 'small', text: '여행을 만들고 친구에게 코드를 보내거나, 받은 코드로 들어가요.' })),
+    el('div', { class: 'tk-stub' }, el('span', { class: 'tk-lbl', text: 'CODE' }), el('span', { class: 'tk-code', text: '······' }))));
+  myTrips.forEach(t => list.append(el('button', { class: 'ticket', type: 'button', onclick: () => openTrip(t.id) },
+    el('div', { class: 'tk-main' },
+      el('div', { class: 'tk-meta' },
+        el('span', { class: 'tk-pill', text: `${t.count}명` }),
+        t.locked ? el('span', { class: 'tk-pill lock', text: '마감' }) : null,
+        t.owner_id === me.id ? el('span', { class: 'tk-pill own', text: '방장' }) : null),
+      el('b', { class: 'tk-name', text: t.name }),
+      t.note ? el('span', { class: 'small', text: t.note }) : null),
+    el('div', { class: 'tk-stub' }, el('span', { class: 'tk-lbl', text: 'CODE' }), el('span', { class: 'tk-code', text: t.code || '' })))));
+  const brand = el('div', { class: 'brand small-brand' }); brand.innerHTML = LOGO + '<span>쿵짝트립</span>';
+  const first = (profiles[me.id]?.name || '').split(' ')[0];
+  $('#app').replaceChildren(el('div', { class: 'screen home' },
     el('header', { class: 'top tight' },
-      el('div', { class: 'toprow' },
-        el('span', { class: 'me' }, avatar(me.id), el('span', { text: profiles[me.id]?.name || '' })),
-        el('button', { class: 'linkbtn plain', type: 'button', style: 'margin-left:auto', onclick: accountSheet }, '계정')),
+      el('div', { class: 'toprow' }, brand,
+        el('button', { class: 'mebtn', type: 'button', 'aria-label': '계정', onclick: accountSheet }, avatar(me.id))),
+      el('p', { class: 'hello', text: first ? `${first}님, 어디로 떠나요?` : '어디로 떠나요?' }),
       el('h1', { text: '내 여행' })),
     list,
-    el('button', { class: 'btn', type: 'button', onclick: createSheet }, '새 여행 만들기'),
-    el('button', { class: 'linkbtn plain center', type: 'button', onclick: () => joinSheet() }, '초대 코드가 있어요')));
+    el('div', { class: 'home-actions' },
+      el('button', { class: 'btn big', type: 'button', onclick: createSheet }, '＋ 새 여행 만들기'),
+      el('button', { class: 'btn line big', type: 'button', onclick: () => joinSheet() }, '초대 코드로 참여'))));
 }
 
 /* ----- create ----- */
@@ -219,14 +254,18 @@ function avatar(id) {
 
 function renderTrip() {
   if (!trip) return;
-  const head = el('header', { class: 'top tight' },
+  const head = el('header', { class: 'trip-head' },
     el('div', { class: 'toprow' },
       el('button', { class: 'back', type: 'button', onclick: () => go('home') }, '‹ 내 여행'),
       el('button', { class: 'iconbtn', type: 'button', 'aria-label': '설정', onclick: settingsSheet }, '⚙')),
-    el('h1', {}, trip.name, trip.locked ? el('span', { class: 'tag lock', text: '마감' }) : null),
-    el('div', { class: 'toprow' },
-      el('span', { class: 'status', id: 'status', text: [`${trip.members.length}명`, trip.note, `코드 ${trip.code}`].filter(Boolean).join(' · ') }),
-      el('button', { class: 'btn small', type: 'button', onclick: shareTrip }, '친구 초대')));
+    el('div', { class: 'pass' },
+      el('div', { class: 'pass-main' },
+        el('h1', {}, trip.name, trip.locked ? el('span', { class: 'tag lock', text: '마감' }) : null),
+        el('div', { class: 'pass-meta', id: 'status' }, faces(trip.members),
+          el('span', { text: [`${trip.members.length}명`, trip.note].filter(Boolean).join(' · ') }))),
+      el('div', { class: 'pass-foot' },
+        el('div', { class: 'pass-code' }, el('span', { class: 'tk-lbl', text: '초대 코드' }), el('b', { text: trip.code })),
+        el('button', { class: 'btn invite', type: 'button', onclick: shareTrip }, '친구 초대'))));
   const tabs = el('nav', { class: 'tabs two', role: 'tablist' },
     [['mine', '체크'], ['all', '결과']].map(([k, t]) =>
       el('button', { role: 'tab', type: 'button', 'aria-selected': String(tab === k), onclick: () => { tab = k; renderTrip(); window.scrollTo(0, 0); } }, t)));
@@ -319,7 +358,7 @@ function renderMine() {
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') goStep(step + 1); });
     card.append(inp);
   } else {
-    card.append(el('div', { class: 'opts' }, q.o.map(lab => {
+    card.append(el('div', { class: 'opts' + (q.multi ? ' multi' : '') }, q.o.map(lab => {
       const on = sel.includes(lab);
       const b = el('button', { class: 'opt', type: 'button', 'aria-pressed': String(on), onclick: () => pick(q, lab) },
         el('span', { text: lab }), el('span', { class: 'tick', text: on ? '✓' : '' }));
