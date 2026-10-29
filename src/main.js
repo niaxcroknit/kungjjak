@@ -15,7 +15,26 @@ const WEB_URL = (import.meta.env.VITE_WEB_URL || '').replace(/\/$/, '');   // �
 // 초대 링크(?join=CODE)로 들어오면 로그인 뒤에도 코드를 기억했다가 바로 참여 화면을 띄움
 const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch {} } };
 (() => { if (new URLSearchParams(location.search).get('account') === 'delete') store.set('openAccount', '1'); })();
-(() => { const c = new URLSearchParams(location.search).get('join'); if (c) { store.set('pendingJoin', c.toUpperCase().slice(0, 6)); history.replaceState(null, '', location.pathname); } })();
+let arrivedJoin = '';   // 방금 초대 링크로 들어온 코드 (웹)
+(() => { const c = new URLSearchParams(location.search).get('join'); if (c) { arrivedJoin = c.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); store.set('pendingJoin', arrivedJoin); history.replaceState(null, '', location.pathname); } })();
+
+// 초대 링크 하나로: 갤럭시는 앱(없으면 Play 스토어), 아이폰·PC는 웹
+const PKG = 'com.tripagree.app';
+const PLAY_URL = STORE_URL || `https://play.google.com/store/apps/details?id=${PKG}`;
+const isAndroidWeb = !Capacitor.isNativePlatform() && /Android/i.test(navigator.userAgent);
+const appIntent = code => `intent://join?code=${code}#Intent;scheme=${PKG};package=${PKG};S.browser_fallback_url=${encodeURIComponent(PLAY_URL + (PLAY_URL.includes('?') ? '&' : '?') + 'referrer=' + encodeURIComponent('join=' + code))};end`;
+const inviteLink = code => WEB_URL ? `${WEB_URL}/?join=${code}` : '';
+
+// 앱: 초대 링크(com.tripagree.app://join?code=ABC123)로 열렸을 때
+function handleAppLink(u) {
+  const m = /^com\.tripagree\.app:\/\/join\?code=([A-Za-z0-9]{6})/.exec(u || ''); if (!m) return;
+  const code = m[1].toUpperCase();
+  if (me) { go('home'); joinSheet(code); } else { store.set('pendingJoin', code); renderLogin(); }
+}
+if (Capacitor.isNativePlatform()) {
+  App.addListener('appUrlOpen', ({ url }) => handleAppLink(url));
+  App.getLaunchUrl?.().then(r => r?.url && setTimeout(() => handleAppLink(r.url), 600)).catch(() => {});
+}
 
 /* ================= helpers ================= */
 const $ = s => document.querySelector(s);
@@ -277,9 +296,10 @@ function renderHeaderOnly() {}
 function renderBody() { if (tab === 'mine') renderMine(); else renderAll(); }
 
 async function shareTrip() {
+  const link = inviteLink(trip.code);
   const text = `[쿵짝트립] '${trip.name}' 같이 체크하자!\n초대 코드: ${trip.code}`
-    + (STORE_URL ? `\n\n갤럭시(안드로이드): 앱 받고 '코드로 참여'\n${STORE_URL}` : '')
-    + (WEB_URL ? `\n\n아이폰·PC: 아래 링크 누르면 바로 참여\n${WEB_URL}/?join=${trip.code}` : '');
+    + (link ? `\n\n아래 링크를 누르면 바로 참여해요\n${link}\n(갤럭시는 앱으로, 아이폰은 웹으로 열려요)`
+      : `\n\n앱에서 '초대 코드로 참여'에 코드를 넣어주세요\n${PLAY_URL}`);
   const copy = async () => { try { await navigator.clipboard.writeText(text); toast('초대 문구를 복사했어요. 카톡에 붙여넣으세요'); } catch { toast(`초대 코드: ${trip.code}`); } };
   try {
     if (Capacitor.isNativePlatform()) await Share.share({ title: '쿵짝트립 초대', text, dialogTitle: '친구 초대' });
@@ -739,7 +759,29 @@ if (!configured) {
   $('#app').replaceChildren(el('div', { class: 'screen login' }, el('h1', { text: '설정이 필요해요' }),
     el('p', { text: '.env 파일에 Supabase 주소와 키를 넣어주세요. README를 참고하세요.' })));
 } else {
-  onUser(async u => {
+  // 갤럭시 웹으로 초대 링크를 열면: 앱으로 열지 먼저 물어봐요
+  let chose = !(isAndroidWeb && arrivedJoin), pendingUser;
+  const boot = u => {
+    if (!chose) { pendingUser = u; renderOpenChoice(); return; }
+    start(u);
+  };
+  function renderOpenChoice() {
+    const code = arrivedJoin;
+    const brand = el('div', { class: 'brand' }); brand.innerHTML = LOGO + '<span>쿵짝트립</span>';
+    const hint = el('p', { class: 'small center-text' }, '앱이 없으면 Play 스토어로 가요. 설치하고 앱에서 ', el('b', { text: '초대 코드로 참여' }), '에 코드를 넣어주세요.');
+    const openApp = el('button', { class: 'btn big', type: 'button', onclick: async () => {
+      try { await navigator.clipboard.writeText(code); } catch {}
+      location.href = appIntent(code);
+    } }, '쿵짝트립 앱으로 열기');
+    const web = el('button', { class: 'btn line big', type: 'button', onclick: () => { chose = true; start(pendingUser); } }, '앱 없이 웹에서 참여');
+    $('#app').replaceChildren(el('div', { class: 'screen login choose' },
+      el('div', { class: 'login-top' }, brand,
+        el('h1', { text: '초대받은\n여행이 있어요' }),
+        el('p', { class: 'lead', text: '갤럭시라면 앱으로 여는 걸 추천해요. 다음부터 홈 화면에서 바로 열 수 있어요.' })),
+      el('div', { class: 'invite-code' }, el('span', { class: 'tk-lbl', text: '초대 코드' }), el('b', { text: code })),
+      el('div', { class: 'login-bottom' }, openApp, hint, web)));
+  }
+  const start = async u => {
     me = u;
     if (!u) { if (homeCh) sb.removeChannel(homeCh); homeCh = null; closeTrip(); renderLogin(); return; }
     const md = u.user_metadata || {};
@@ -749,6 +791,7 @@ if (!configured) {
     watchMyTrips(); renderHome();
     const pj = store.get('pendingJoin'); if (pj) { store.set('pendingJoin', ''); joinSheet(pj); }
     if (store.get('openAccount')) { store.set('openAccount', ''); accountSheet(); }
-  });
+  };
+  onUser(boot);
   App.addListener('resume', () => { if (!me) return; if (tripId) loadTrip(false); else loadMyTrips(); });
 }

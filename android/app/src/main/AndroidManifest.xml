@@ -28,6 +28,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="com.tripagree.app" android:host="login-callback" />
+                <!-- 초대 링크: 웹에서 "앱으로 열기" (com.tripagree.app://join?code=ABC123) -->
+                <data android:scheme="com.tripagree.app" android:host="join" />
             </intent-filter>
 
         </activity>

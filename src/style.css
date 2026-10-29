@@ -457,3 +457,8 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .pv{padding-bottom:40px}
 .pv-stamp{bottom:2px;right:10px;font-size:22px}
 .toast{width:max-content;border-radius:16px;line-height:1.45}
+/* 초대 링크로 들어왔을 때: 앱/웹 고르기 */
+.center-text{text-align:center}
+.invite-code{align-self:center;justify-self:center;display:grid;justify-items:center;gap:2px;padding:18px 34px;border-radius:22px;color:#fff;
+  background:linear-gradient(150deg,var(--accent),var(--accent-2));box-shadow:0 10px 26px rgba(14,124,102,.25)}
+.invite-code b{font-family:var(--f-display);font-weight:400;font-size:40px;letter-spacing:.16em;line-height:1.1}
