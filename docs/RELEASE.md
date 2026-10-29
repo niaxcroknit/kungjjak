@@ -16,12 +16,12 @@
 ## 1. 코드 받기
 
 ```bash
-git clone https://github.com/kimseohappiness/trip-agree
-cd trip-agree
+git clone https://github.com/niaxcroknit/kungjjak
+cd kungjjak
 cp .env.example .env        # 윈도우: copy .env.example .env
 npm install
 ```
-- 비공개 저장소라 처음에 GitHub 로그인 창이 떠요.
+- 터미널이 싫으면 GitHub 페이지의 **Code → Download ZIP**으로 받아도 돼요.
 - `.env`에는 Supabase 주소와 공개 키가 이미 들어 있어요. `VITE_WEB_URL`, `VITE_STORE_URL`은 아래 단계에서 채워요.
 
 ## 2. 웹 올리기 (Netlify, 무료)
