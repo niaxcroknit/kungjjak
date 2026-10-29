@@ -298,7 +298,7 @@ function renderBody() { if (tab === 'mine') renderMine(); else renderAll(); }
 async function shareTrip() {
   const link = inviteLink(trip.code);
   const text = `[쿵짝트립] '${trip.name}' 같이 체크하자!\n초대 코드: ${trip.code}`
-    + (link ? `\n\n아래 링크를 누르면 바로 참여해요\n${link}\n(갤럭시는 앱으로, 아이폰은 웹으로 열려요)`
+    + (link ? `\n\n아래 링크를 누르면 바로 참여해요\n${link}`
       : `\n\n앱에서 '초대 코드로 참여'에 코드를 넣어주세요\n${PLAY_URL}`);
   const copy = async () => { try { await navigator.clipboard.writeText(text); toast('초대 문구를 복사했어요. 카톡에 붙여넣으세요'); } catch { toast(`초대 코드: ${trip.code}`); } };
   try {
