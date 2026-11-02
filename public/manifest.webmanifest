@@ -1,7 +1,6 @@
 {
   "name": "쿵짝트립",
   "short_name": "쿵짝트립",
-  "description": "친구들과 여행 취향을 체크하고, 갈린 의견만 한눈에.",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",
@@ -9,8 +8,24 @@
   "background_color": "#F5F1EA",
   "theme_color": "#0E7C66",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "./"
 }
