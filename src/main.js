@@ -1,6 +1,8 @@
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { App } from '@capacitor/app';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { drawResult } from './shareImage.js';
 import { sb, configured, onUser, signIn, signOut, deleteAccount } from './supabase.js';
 import { DEFAULT_Q, CATS, prep, raw, ETC, ANY, answered as answeredIn, verdict, cellText, commonDates, fmtDates, EXAMPLES } from './questions.js';
 // 지금 열린 여행의 질문 목록 (여행마다 다를 수 있음)
@@ -300,17 +302,63 @@ async function shareTrip() {
   const text = `[쿵짝트립] '${trip.name}' 같이 체크하자!\n초대 코드: ${trip.code}`
     + (link ? `\n\n아래 링크를 누르면 바로 참여해요\n${link}`
       : `\n\n앱에서 '초대 코드로 참여'에 코드를 넣어주세요\n${PLAY_URL}`);
-  const copy = async () => { try { await navigator.clipboard.writeText(text); toast('초대 문구를 복사했어요. 카톡에 붙여넣으세요'); } catch { toast(`초대 코드: ${trip.code}`); } };
+  shareText(text, '친구 초대', '초대 문구를 복사했어요. 카톡에 붙여넣으세요');
+}
+
+// 카톡 등으로 글 보내기 (안 되면 복사)
+async function shareText(text, title, done = '복사했어요. 카톡에 붙여넣으세요') {
+  const copy = async () => { try { await navigator.clipboard.writeText(text); toast(done); } catch { toast('공유하지 못했어요'); } };
   try {
-    if (Capacitor.isNativePlatform()) await Share.share({ title: '쿵짝트립 초대', text, dialogTitle: '친구 초대' });
+    if (Capacitor.isNativePlatform()) await Share.share({ title, text, dialogTitle: title });
     else if (navigator.share) await navigator.share({ text });
     else await copy();
-  } catch (e) { if (e?.name !== 'AbortError') await copy(); }   // 공유 창이 안 되는 환경이면 복사로
+  } catch (e) { if (e?.name !== 'AbortError' && !/cancel/i.test(e?.message || '')) await copy(); }
+}
+
+/* ----- 누가 했나 + 콕 찌르기 ----- */
+const isDone = (q, d) => q.type === 'text' ? !!(((d.etc || {})[q.id]) || '').trim() : ((d.answers || {})[q.id] || []).length > 0;
+// 직접 쓰는 질문은 빼고 셈. 90% 넘게 답했으면 '다 했음'으로 봐요 (한두 개 건너뛴 건 괜찮게)
+function progressOf(id) {
+  const d = id === me.id ? mine : (answers[id] || {});
+  const qs = Q.filter(q => q.type !== 'text'), n = qs.filter(q => isDone(q, d)).length;
+  return { n, total: qs.length, done: qs.length > 0 && n >= Math.ceil(qs.length * 0.9), started: n > 0 };
+}
+const callName = id => (answers[id]?.nickname) || (profiles[id]?.name || '').split(' ')[0] || '친구';
+function progressCard() {
+  const ids = [...trip.members].sort((a, b) => a === me.id ? -1 : b === me.id ? 1 : 0);
+  const st = Object.fromEntries(ids.map(id => [id, progressOf(id)]));
+  const doneN = ids.filter(id => st[id].done).length;
+  const waiting = ids.filter(id => id !== me.id && !st[id].done);
+  const head = ids.length < 2 ? '아직 혼자예요'
+    : doneN === ids.length ? `${ids.length}명 모두 다 했어요`
+    : `${ids.length}명 중 ${doneN}명 다 했어요`;
+  const sub = ids.length < 2 ? '친구를 초대하면 누가 했는지 여기서 보여요.'
+    : waiting.length ? `${waiting.map(callName).join(', ')} 아직이에요` : doneN === ids.length ? '이제 결과를 같이 보면 돼요.' : '나만 남았어요!';
+  const fill = el('i'); fill.style.width = Math.round(doneN / Math.max(ids.length, 1) * 100) + '%';
+  const rows = el('div', { class: 'who-list' }, ids.map(id => {
+    const s = st[id];
+    return el('div', { class: 'who-row' + (s.done ? ' ok' : '') }, avatar(id),
+      el('span', { class: 'who-nm', text: id === me.id ? `${callName(id)} (나)` : callName(id) }),
+      el('span', { class: 'who-st', text: s.done ? '다 했어요' : s.started ? `${s.n} / ${s.total}` : '아직 안 함' }));
+  }));
+  const card = el('div', { class: 'card prog' },
+    el('div', { class: 'prog-head' }, el('b', { text: head }), el('span', { class: 'small', text: sub })),
+    ids.length > 1 ? el('span', { class: 'meter' }, fill) : null,
+    ids.length > 1 ? rows : null);
+  if (ids.length < 2) card.append(el('button', { class: 'btn', type: 'button', onclick: shareTrip }, '친구 초대하기'));
+  else if (waiting.length && editable()) card.append(el('button', { class: 'btn poke', type: 'button', onclick: () => poke(waiting, doneN, ids.length) },
+    waiting.length === 1 ? `${callName(waiting[0])} 콕 찌르기` : `아직인 ${waiting.length}명 콕 찌르기`));
+  return card;
+}
+function poke(waiting, doneN, total) {
+  const names = waiting.map(callName).join(', ');
+  const link = inviteLink(trip.code) || PLAY_URL;
+  const text = `[쿵짝트립] 콕! ${names}\n'${trip.name}' 체크 좀 해줘. ${total}명 중 ${doneN}명은 끝났어!\n\n${link}`;
+  shareText(text, '콕 찌르기', '콕 찌르기 문구를 복사했어요. 카톡에 붙여넣으세요');
 }
 
 /* ----- 체크: 한 장에 한 질문 ----- */
 let step = 0;
-const isDone = (q, d) => q.type === 'text' ? !!(((d.etc || {})[q.id]) || '').trim() : ((d.answers || {})[q.id] || []).length > 0;
 const firstOpen = () => { const i = Q.findIndex(q => !isDone(q, mine)); return i < 0 ? Q.length : i; };
 let dir = 0;   // 1: 앞으로, -1: 뒤로 (카드 넘김 효과)
 function goStep(i) {
@@ -356,6 +404,7 @@ function renderMine() {
       el('button', { class: 'btn', type: 'button', onclick: () => { tab = 'all'; renderTrip(); window.scrollTo(0, 0); } }, '결과 보기'),
       skipped && ed ? el('button', { class: 'btn line', type: 'button', onclick: () => goStep(firstOpen()) }, '건너뛴 질문 하기') : null,
       el('button', { class: 'linkbtn plain', type: 'button', onclick: jumpSheet }, '질문 목록 보기')));
+    p.append(progressCard());
     return;
   }
 
@@ -524,6 +573,7 @@ async function renderAll() {
   const ids = Object.keys(V).sort((a, b) => a === me.id ? -1 : b === me.id ? 1 : 0);
   await loadProfiles(ids);
   p.replaceChildren();
+  p.append(progressCard());
   if (useEx) p.append(el('div', { class: 'notice', text: '아직 친구 답이 없어서 예시 친구 2명으로 보여줘요. 친구가 답하면 바뀌어요.' }));
   if (!ids.length) return;
 
@@ -533,7 +583,10 @@ async function renderAll() {
 
   p.append(el('div', { class: 'hero' },
     el('div', { class: 'big ' + (cnt.bad ? 'red' : 'green'), text: cnt.bad ? `얘기할 것 ${cnt.bad}개` : '다 맞았어요' }),
-    el('div', { class: 'small' }, faces(ids), ` ${ids.length}명 · 같음 ${cnt.ok} · 일부 같음 ${cnt.part}`)));
+    el('div', { class: 'small' }, faces(ids), ` ${ids.length}명 · 같음 ${cnt.ok} · 일부 같음 ${cnt.part}`),
+    el('button', { class: 'btn line img-share', type: 'button', onclick: () => useEx
+      ? toast('친구가 2명 이상 답하면 결과 이미지를 만들 수 있어요')
+      : resultImageSheet({ ids, V, vs, cnt, by }) }, '결과 이미지로 공유')));
 
   by('bad').forEach(q => p.append(resultCard(q, ids, V, 'bad')));
 
@@ -552,6 +605,48 @@ async function renderAll() {
       ids.map(id => el('th', {}, el('span', { class: 'hd' }, avatar(id), el('span', { text: shortName(id) })))))),
     el('tbody', {}, Q.map(q => el('tr', { class: vs[q.id] || 'text' }, el('th', { class: 'qcol', text: q.t }),
       ids.map(id => { const t = cellText(q, V[id]); return el('td', { class: t ? '' : 'blank', text: t || '–' }); })))))));
+}
+
+/* ----- 결과 이미지 ----- */
+const imgName = id => isEx(id) ? EXAMPLES[id].nickname : callName(id);
+async function resultImageSheet({ ids, V, vs, cnt, by }) {
+  openSheet('결과 이미지', [el('div', { class: 'card empty', text: '이미지를 만드는 중…' })]);
+  try {
+    const bad = by('bad').map(q => {
+      let note = '';
+      if (q.type === 'dates') { const both = commonDates(q, ids.map(id => V[id])); note = both.length ? `모두 되는 날 · ${fmtDates(both)}` : '모두 되는 날이 없어요'; }
+      return { t: q.t, note, groups: groupsFor(q, ids, V).map(g => ({ text: g.text, names: g.who.map(imgName).join(', ') })) };
+    });
+    const ok = by('ok').map(q => { const pk = ids.map(id => cellText(q, V[id])).filter(t => t && t !== ANY); return { t: q.t, a: pk[0] || '모두 상관없음' }; });
+    const d = new Date();
+    const cv = await drawResult({
+      name: trip.name, logo: LOGO,
+      meta: [`${ids.length}명 · ${ids.map(imgName).join(', ')}`, trip.note, `${d.getMonth() + 1}월 ${d.getDate()}일 기준`].filter(Boolean).join('  ·  '),
+      counts: cnt, bad, ok,
+      url: (WEB_URL || '').replace(/^https?:\/\//, ''),
+    });
+    const name = `kungjjak-${trip.code}.png`;
+    const img = el('img', { class: 'shot', alt: '결과 이미지 미리보기' }); img.src = cv.toDataURL('image/png');
+    const go = el('button', { class: 'btn big', type: 'button' }, '단톡방에 공유하기');
+    go.addEventListener('click', async () => { go.disabled = true; try { await shareImage(cv, name); } finally { go.disabled = false; } });
+    openSheet('결과 이미지', [el('div', { class: 'shot-wrap' }, img), go,
+      el('p', { class: 'small center-text', text: '얘기할 것과 모두 같은 답이 들어가요. 각자 적은 글은 빠져요.' })]);
+  } catch (e) { console.error(e); openSheet('결과 이미지', [el('div', { class: 'card empty', text: '이미지를 만들지 못했어요. 다시 해주세요.' })]); }
+}
+async function shareImage(cv, name) {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const data = cv.toDataURL('image/png').split(',')[1];
+      const { uri } = await Filesystem.writeFile({ path: name, data, directory: Directory.Cache });
+      await Share.share({ title: `${trip.name} 결과`, files: [uri], dialogTitle: '결과 공유' });
+      return;
+    }
+    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    const file = new File([blob], name, { type: 'image/png' });
+    if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file] }); return; }
+    const a = el('a', { href: URL.createObjectURL(blob), download: name }); document.body.append(a); a.click(); a.remove();
+    toast('이미지를 저장했어요. 단톡방에 올려주세요');
+  } catch (e) { if (e?.name !== 'AbortError' && !/cancel/i.test(e?.message || '')) { console.error(e); toast('공유하지 못했어요'); } }
 }
 
 /* ----- 바뀐 기록 (시트) ----- */

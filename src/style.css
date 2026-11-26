@@ -462,3 +462,22 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .invite-code{align-self:center;justify-self:center;display:grid;justify-items:center;gap:2px;padding:18px 34px;border-radius:22px;color:#fff;
   background:linear-gradient(150deg,var(--accent),var(--accent-2));box-shadow:0 10px 26px rgba(14,124,102,.25)}
 .invite-code b{font-family:var(--f-display);font-weight:400;font-size:40px;letter-spacing:.16em;line-height:1.1}
+
+/* ---------- 누가 했나 + 콕 찌르기 ---------- */
+.prog{gap:12px}
+.prog-head{display:grid;gap:2px}
+.prog-head b{font-size:19px}
+.who-list{display:grid;gap:2px}
+.who-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;min-height:40px}
+.who-row .av{width:30px;height:30px;font-size:13px}
+.who-nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who-st{font-size:14px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;padding:3px 10px;border-radius:999px;background:var(--bg)}
+.who-row.ok .who-st{color:var(--accent);background:var(--accent-soft)}
+.btn.poke{background:var(--warn);color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.poke{color:#1B0F0B}}
+:root[data-theme="dark"] .btn.poke{color:#1B0F0B}
+
+/* ---------- 결과 이미지 ---------- */
+.img-share{margin-top:6px;min-height:44px}
+.shot-wrap{background:var(--paper);border-radius:18px;padding:10px;box-shadow:var(--shadow);max-height:58vh;overflow:auto}
+.shot{display:block;width:100%;height:auto;border-radius:10px}
